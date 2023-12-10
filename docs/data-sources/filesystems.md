@@ -30,5 +30,12 @@ Read-Only:
 - `is_in_use` (Boolean) Is the filesystem in use
 - `mount_point` (String) Filesystem mount point
 - `name` (String) Filesystem name
-- `region_description` (String) Filesystem region description
-- `region_name` (String) Filesystem region name
+- `region` (Attributes) Filesystem region (see [below for nested schema](#nestedatt--filesystems--region))
+
+<a id="nestedatt--filesystems--region"></a>
+### Nested Schema for `filesystems.region`
+
+Read-Only:
+
+- `description` (String) Filesystem region description
+- `name` (String) Filesystem region name
