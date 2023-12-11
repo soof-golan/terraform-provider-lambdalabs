@@ -49,11 +49,6 @@ func (r *InstanceResource) Schema(ctx context.Context, req resource.SchemaReques
 				Computed:            true,
 				MarkdownDescription: "Unique identifier of the instance. valid when `quantity` is 1 (the default).",
 			},
-			//"ids": schema.SetAttribute{
-			//	Computed:            true,
-			//	MarkdownDescription: `List of unique identifiers of the instances`,
-			//	ElementType:         types.StringType,
-			//},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "User-provided name of the instance",
 				Optional:            true,
@@ -76,10 +71,7 @@ func (r *InstanceResource) Schema(ctx context.Context, req resource.SchemaReques
 			"filesystem_names": schema.ListAttribute{
 				MarkdownDescription: "List of filesystem names to be added to the instance. Currently, only one (if any) file system may be specified.",
 				ElementType:         types.StringType,
-				Computed:            true,
-				Default: ListDefaultEmpty{
-					ElementType: types.StringType,
-				},
+				Optional:            true,
 				Validators: []validator.List{
 					ListMaxLength{max: 1},
 				},
@@ -96,15 +88,6 @@ func (r *InstanceResource) Schema(ctx context.Context, req resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			//"quantity": schema.Int64Attribute{
-			//	MarkdownDescription: "Number of instances to provision (default: 1)",
-			//	Optional:            true,
-			//	Computed:            true,
-			//	Default:             Int64Default{defaultValue: 1},
-			//	PlanModifiers: []planmodifier.Int64{
-			//		int64planmodifier.RequiresReplace(),
-			//	},
-			//},
 			"region": schema.StringAttribute{
 				MarkdownDescription: "Name of the region where the instance is located",
 				Required:            true,
@@ -187,7 +170,9 @@ func (r *InstanceResource) Create(ctx context.Context, req resource.CreateReques
 		fileSystemNames = makeStringListFromTf(data.FileSystemNames)
 	}
 
-	// TODO: support multiple instances
+	// TODO: Add support multiple instances
+	// Considerations:
+	//  - Mutually exclusive with file systems, cannot attach same fs to multiple instances
 	var quantity = 1
 
 	body := lambdalabs.LaunchInstanceJSONRequestBody{

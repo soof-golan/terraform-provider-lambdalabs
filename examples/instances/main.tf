@@ -26,8 +26,9 @@ resource "lambdalabs_ssh_key" "instance_ssh_key" {
 
 resource "lambdalabs_instance" "example_instance" {
   instance_type = "gpu_1x_a10" // This instance type costs about 60 cents an hour
-  region        = "us-east-1"
+  region        = "us-west-1"
   ssh_key_names = [lambdalabs_ssh_key.instance_ssh_key.name]
+  filesystem_names = ["stable-diffusion"]
 }
 
 data "lambdalabs_instance" "example" {
