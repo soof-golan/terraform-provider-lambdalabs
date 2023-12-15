@@ -53,5 +53,3 @@ output "lambda_all_instances_result" {
 output "lambda_just_one_instance_result" {
   value = data.lambdalabs_instance.example
 }
-
-

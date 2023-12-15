@@ -42,4 +42,3 @@ output "lambda_ssh_key" {
 output "lambda_ssh_key_resource" {
   value = lambdalabs_ssh_key.edu
 }
-
