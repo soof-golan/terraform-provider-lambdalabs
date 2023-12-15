@@ -23,9 +23,9 @@ Lambda Labs VM Instance resource.
 
 ### Optional
 
+- `filesystem_names` (List of String) List of filesystem names to be added to the instance. Currently, only one (if any) file system may be specified.
 - `name` (String) User-provided name of the instance
 
 ### Read-Only
 
-- `filesystem_names` (List of String) List of filesystem names to be added to the instance. Currently, only one (if any) file system may be specified.
 - `id` (String) Unique identifier of the instance. valid when `quantity` is 1 (the default).
