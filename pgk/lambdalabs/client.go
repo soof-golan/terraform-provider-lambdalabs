@@ -5,7 +5,7 @@ import (
 	"github.com/deepmap/oapi-codegen/v2/pkg/securityprovider"
 )
 
-// NewAuthenticatedClient creates a new Lambda Labs API client with a bearer token
+// NewAuthenticatedClient creates a new Lambda Labs API client with a bearer token.
 func NewAuthenticatedClient(host string, apiKey string, opts ...ClientOption) (*ClientWithResponses, error) {
 
 	if host == "" {

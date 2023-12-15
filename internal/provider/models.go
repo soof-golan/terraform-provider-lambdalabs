@@ -4,7 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// RegionModel Region where an instance (or filesystem) is located
+// RegionModel Region where an instance (or filesystem) is located.
 type RegionModel struct {
 	// Description Long name of the region
 	Description types.String `tfsdk:"description"`
@@ -38,7 +38,7 @@ type sshkeyDataSourceModel struct {
 	PublicKey types.String `tfsdk:"public_key"`
 }
 
-// InstanceSpecsModel Hardware configuration of an instance type
+// InstanceSpecsModel Hardware configuration of an instance type.
 type InstanceSpecsModel struct {
 	// MemoryGib Amount of RAM, in gibibytes (GiB)
 	MemoryGib types.Int64 `tfsdk:"memory_gib"`
@@ -50,12 +50,12 @@ type InstanceSpecsModel struct {
 	Vcpus types.Int64 `tfsdk:"vcpus"`
 }
 
-// InstanceTypeModel Hardware configuration and pricing of an instance type
+// InstanceTypeModel Hardware configuration and pricing of an instance type.
 type InstanceTypeModel struct {
 	// Description Long name of the instance type
 	Description types.String `tfsdk:"description"`
 
-	// Name Name of an instance type
+	// Name User defined Name of an instance type
 	Name types.String `tfsdk:"name"`
 
 	// PriceCentsPerHour Price of the instance type, in US cents per hour
@@ -65,7 +65,7 @@ type InstanceTypeModel struct {
 	Specs InstanceSpecsModel `tfsdk:"specs"`
 }
 
-// InstanceDataSourceModel Virtual machine (VM) in Lambda Cloud
+// InstanceDataSourceModel Virtual machine (VM) in Lambda Cloud.
 type InstanceDataSourceModel struct {
 	// FileSystemNames Names of the file systems, if any, attached to the instance
 	FileSystemNames []types.String `tfsdk:"filesystem_names"`
