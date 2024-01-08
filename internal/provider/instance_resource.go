@@ -43,7 +43,6 @@ func (r *InstanceResource) Schema(ctx context.Context, req resource.SchemaReques
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Lambda Labs VM Instance resource.",
-
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -133,33 +132,7 @@ func (r *InstanceResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	err := retry.RetryContext(ctx, 20*time.Minute, func() *retry.RetryError {
-		instanceTypesResponse, err := r.client.InstanceTypesWithResponse(ctx)
-		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("unable to read available instance types, got error: %s", err))
-		}
-		if instanceTypesResponse.JSON200 == nil {
-			return retry.NonRetryableError(fmt.Errorf("unable to read available instance types, got error: %s", instanceTypesResponse.Body))
-		}
-		instanceTypes := instanceTypesResponse.JSON200.Data
-		instanceAvailability, ok := instanceTypes[data.InstanceTypeName.ValueString()]
-		if !ok {
-			return retry.NonRetryableError(fmt.Errorf("instance type %s not found in available instance types", data.InstanceTypeName.ValueString()))
-		}
-
-		regions := make(map[string]lambdalabs.Region)
-		for _, region := range instanceAvailability.RegionsWithCapacityAvailable {
-			regions[region.Name] = region
-		}
-		_, ok = regions[data.RegionName.ValueString()]
-		if !ok {
-			// https://docs.lambdalabs.com/cloud/rate-limiting/
-			// Default retry delay is 500ms, so we sleep for 2 more seconds to play nice with the API
-			time.Sleep(2 * time.Second)
-			return retry.RetryableError(fmt.Errorf("no capacity available in region %s", data.RegionName.ValueString()))
-		}
-		return nil
-	})
+	err := r.WaitForInstanceAvailability(ctx, data)
 	if err != nil {
 		resp.Diagnostics.AddError("Instance type unavailable", fmt.Sprintf("Unable to create instance, got error: %s", err))
 		return
@@ -207,6 +180,12 @@ func (r *InstanceResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	InstanceIDs := response.JSON200.Data.InstanceIds
+
+	err = r.WaitForInstanceBoot(ctx, InstanceIDs[0])
+	if err != nil {
+		resp.Diagnostics.AddError("Instance failed to boot", fmt.Sprintf("Unable to create instance, got error: %s", err))
+		return
+	}
 
 	if len(InstanceIDs) == 1 {
 		tflog.Trace(ctx, "created new instance", map[string]interface{}{"id": InstanceIDs[0]})
@@ -354,4 +333,83 @@ func (r *InstanceResource) Delete(ctx context.Context, req resource.DeleteReques
 
 func (r *InstanceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("ids"), req, resp)
+}
+
+// WaitForInstanceBoot waits for the instance to be in a state where it can be accessed
+func (r *InstanceResource) WaitForInstanceBoot(ctx context.Context, instanceID lambdalabs.InstanceId) error {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		// No deadline set, so we set one to 20 minutes from now
+		deadline = time.Now().Add(20 * time.Minute)
+		tflog.Trace(ctx, "no deadline set, setting to 20 minutes from now")
+	}
+	return retry.RetryContext(ctx, deadline.Sub(time.Now()), func() *retry.RetryError {
+
+		response, err := r.client.GetInstanceWithResponse(ctx, instanceID)
+		if err != nil {
+			return retry.NonRetryableError(fmt.Errorf("unable to read instance %s, got error: %s", instanceID, err))
+		}
+		if response.StatusCode() != 200 {
+			return retry.NonRetryableError(fmt.Errorf("unable to read instance %s, http status code: %d, response: %s", instanceID, response.StatusCode(), response.Body))
+		}
+		if response.JSON200 == nil {
+			return retry.NonRetryableError(fmt.Errorf("unable to read instance %s, response: %s", instanceID, response.Body))
+		}
+		instance := response.JSON200.Data
+
+		result, ok := map[lambdalabs.InstanceStatus]*retry.RetryError{
+			lambdalabs.InstanceStatusActive:      nil,
+			lambdalabs.InstanceStatusBooting:     retry.RetryableError(fmt.Errorf("instance %s still booting. last responsse: %s", instanceID, response.Body)),
+			lambdalabs.InstanceStatusUnhealthy:   retry.RetryableError(fmt.Errorf("instance %s is unhealthy. last responsse: %s", instanceID, response.Body)),
+			lambdalabs.InstanceStatusTerminated:  retry.NonRetryableError(fmt.Errorf("instance %s is terminated. last responsse: %s", instanceID, response.Body)),
+			lambdalabs.InstanceStatusTerminating: retry.NonRetryableError(fmt.Errorf("instance %s is terminating. last responsse: %s", instanceID, response.Body)),
+		}[instance.Status]
+
+		if !ok {
+			return retry.NonRetryableError(fmt.Errorf("unknown instance status %s. last responsse: %s", instance.Status, response.Body))
+		}
+		if result != nil && result.Retryable {
+			// https://docs.lambdalabs.com/cloud/rate-limiting/
+			// Default retry delay is 500ms, so we sleep for 2 more seconds to play nice with the API
+			time.Sleep(2 * time.Second)
+		}
+		return result
+	})
+}
+
+// WaitForInstanceAvailability waits for the instance type to be available in the specified region
+func (r *InstanceResource) WaitForInstanceAvailability(ctx context.Context, data InstanceResourceModel) error {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		// No deadline set, so we set one to 20 minutes from now
+		deadline = time.Now().Add(20 * time.Minute)
+		tflog.Trace(ctx, "no deadline set, setting to 20 minutes from now")
+	}
+	return retry.RetryContext(ctx, deadline.Sub(time.Now()), func() *retry.RetryError {
+		instanceTypesResponse, err := r.client.InstanceTypesWithResponse(ctx)
+		if err != nil {
+			return retry.NonRetryableError(fmt.Errorf("unable to read available instance types, got error: %s", err))
+		}
+		if instanceTypesResponse.JSON200 == nil {
+			return retry.NonRetryableError(fmt.Errorf("unable to read available instance types, got error: %s", instanceTypesResponse.Body))
+		}
+		instanceTypes := instanceTypesResponse.JSON200.Data
+		instanceAvailability, ok := instanceTypes[data.InstanceTypeName.ValueString()]
+		if !ok {
+			return retry.NonRetryableError(fmt.Errorf("instance type %s not found in available instance types", data.InstanceTypeName.ValueString()))
+		}
+
+		regions := make(map[string]lambdalabs.Region)
+		for _, region := range instanceAvailability.RegionsWithCapacityAvailable {
+			regions[region.Name] = region
+		}
+		_, ok = regions[data.RegionName.ValueString()]
+		if !ok {
+			// https://docs.lambdalabs.com/cloud/rate-limiting/
+			// Default retry delay is 500ms, so we sleep for 2 more seconds to play nice with the API
+			time.Sleep(2 * time.Second)
+			return retry.RetryableError(fmt.Errorf("no capacity available in region %s", data.RegionName.ValueString()))
+		}
+		return nil
+	})
 }

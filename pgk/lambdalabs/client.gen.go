@@ -5,14 +5,19 @@ package lambdalabs
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/gin-gonic/gin"
 	"github.com/oapi-codegen/runtime"
 )
 
@@ -1949,4 +1954,430 @@ func ParseDeleteSSHKeyResponse(rsp *http.Response) (*DeleteSSHKeyResponse, error
 	}
 
 	return response, nil
+}
+
+// ServerInterface represents all server handlers.
+type ServerInterface interface {
+	// List file systems
+	// (GET /file-systems)
+	ListFileSystems(c *gin.Context)
+	// Launch instances
+	// (POST /instance-operations/launch)
+	LaunchInstance(c *gin.Context)
+	// Restart instances
+	// (POST /instance-operations/restart)
+	RestartInstance(c *gin.Context)
+	// Terminate an instance
+	// (POST /instance-operations/terminate)
+	TerminateInstance(c *gin.Context)
+	// Retrieve list of offered instance types
+	// (GET /instance-types)
+	InstanceTypes(c *gin.Context)
+	// List running instances
+	// (GET /instances)
+	ListInstances(c *gin.Context)
+	// List details of a specific instance
+	// (GET /instances/{id})
+	GetInstance(c *gin.Context, id InstanceId)
+	// List SSH keys
+	// (GET /ssh-keys)
+	ListSSHKeys(c *gin.Context)
+	// Add SSH key
+	// (POST /ssh-keys)
+	AddSSHKey(c *gin.Context)
+	// Delete SSH key
+	// (DELETE /ssh-keys/{id})
+	DeleteSSHKey(c *gin.Context, id SshKeyId)
+}
+
+// ServerInterfaceWrapper converts contexts to parameters.
+type ServerInterfaceWrapper struct {
+	Handler            ServerInterface
+	HandlerMiddlewares []MiddlewareFunc
+	ErrorHandler       func(*gin.Context, error, int)
+}
+
+type MiddlewareFunc func(c *gin.Context)
+
+// ListFileSystems operation middleware
+func (siw *ServerInterfaceWrapper) ListFileSystems(c *gin.Context) {
+
+	c.Set(BasicAuthScopes, []string{})
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.ListFileSystems(c)
+}
+
+// LaunchInstance operation middleware
+func (siw *ServerInterfaceWrapper) LaunchInstance(c *gin.Context) {
+
+	c.Set(BasicAuthScopes, []string{})
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.LaunchInstance(c)
+}
+
+// RestartInstance operation middleware
+func (siw *ServerInterfaceWrapper) RestartInstance(c *gin.Context) {
+
+	c.Set(BasicAuthScopes, []string{})
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.RestartInstance(c)
+}
+
+// TerminateInstance operation middleware
+func (siw *ServerInterfaceWrapper) TerminateInstance(c *gin.Context) {
+
+	c.Set(BasicAuthScopes, []string{})
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.TerminateInstance(c)
+}
+
+// InstanceTypes operation middleware
+func (siw *ServerInterfaceWrapper) InstanceTypes(c *gin.Context) {
+
+	c.Set(BasicAuthScopes, []string{})
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.InstanceTypes(c)
+}
+
+// ListInstances operation middleware
+func (siw *ServerInterfaceWrapper) ListInstances(c *gin.Context) {
+
+	c.Set(BasicAuthScopes, []string{})
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.ListInstances(c)
+}
+
+// GetInstance operation middleware
+func (siw *ServerInterfaceWrapper) GetInstance(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id InstanceId
+
+	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(BasicAuthScopes, []string{})
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetInstance(c, id)
+}
+
+// ListSSHKeys operation middleware
+func (siw *ServerInterfaceWrapper) ListSSHKeys(c *gin.Context) {
+
+	c.Set(BasicAuthScopes, []string{})
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.ListSSHKeys(c)
+}
+
+// AddSSHKey operation middleware
+func (siw *ServerInterfaceWrapper) AddSSHKey(c *gin.Context) {
+
+	c.Set(BasicAuthScopes, []string{})
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.AddSSHKey(c)
+}
+
+// DeleteSSHKey operation middleware
+func (siw *ServerInterfaceWrapper) DeleteSSHKey(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id SshKeyId
+
+	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(BasicAuthScopes, []string{})
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.DeleteSSHKey(c, id)
+}
+
+// GinServerOptions provides options for the Gin server.
+type GinServerOptions struct {
+	BaseURL      string
+	Middlewares  []MiddlewareFunc
+	ErrorHandler func(*gin.Context, error, int)
+}
+
+// RegisterHandlers creates http.Handler with routing matching OpenAPI spec.
+func RegisterHandlers(router gin.IRouter, si ServerInterface) {
+	RegisterHandlersWithOptions(router, si, GinServerOptions{})
+}
+
+// RegisterHandlersWithOptions creates http.Handler with additional options
+func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options GinServerOptions) {
+	errorHandler := options.ErrorHandler
+	if errorHandler == nil {
+		errorHandler = func(c *gin.Context, err error, statusCode int) {
+			c.JSON(statusCode, gin.H{"msg": err.Error()})
+		}
+	}
+
+	wrapper := ServerInterfaceWrapper{
+		Handler:            si,
+		HandlerMiddlewares: options.Middlewares,
+		ErrorHandler:       errorHandler,
+	}
+
+	router.GET(options.BaseURL+"/file-systems", wrapper.ListFileSystems)
+	router.POST(options.BaseURL+"/instance-operations/launch", wrapper.LaunchInstance)
+	router.POST(options.BaseURL+"/instance-operations/restart", wrapper.RestartInstance)
+	router.POST(options.BaseURL+"/instance-operations/terminate", wrapper.TerminateInstance)
+	router.GET(options.BaseURL+"/instance-types", wrapper.InstanceTypes)
+	router.GET(options.BaseURL+"/instances", wrapper.ListInstances)
+	router.GET(options.BaseURL+"/instances/:id", wrapper.GetInstance)
+	router.GET(options.BaseURL+"/ssh-keys", wrapper.ListSSHKeys)
+	router.POST(options.BaseURL+"/ssh-keys", wrapper.AddSSHKey)
+	router.DELETE(options.BaseURL+"/ssh-keys/:id", wrapper.DeleteSSHKey)
+}
+
+// Base64 encoded, gzipped, json marshaled Swagger object
+var swaggerSpec = []string{
+
+	"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",
+}
+
+// GetSwagger returns the content of the embedded swagger specification file
+// or error if failed to decode
+func decodeSpec() ([]byte, error) {
+	zipped, err := base64.StdEncoding.DecodeString(strings.Join(swaggerSpec, ""))
+	if err != nil {
+		return nil, fmt.Errorf("error base64 decoding spec: %w", err)
+	}
+	zr, err := gzip.NewReader(bytes.NewReader(zipped))
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing spec: %w", err)
+	}
+	var buf bytes.Buffer
+	_, err = buf.ReadFrom(zr)
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing spec: %w", err)
+	}
+
+	return buf.Bytes(), nil
+}
+
+var rawSpec = decodeSpecCached()
+
+// a naive cached of a decoded swagger spec
+func decodeSpecCached() func() ([]byte, error) {
+	data, err := decodeSpec()
+	return func() ([]byte, error) {
+		return data, err
+	}
+}
+
+// Constructs a synthetic filesystem for resolving external references when loading openapi specifications.
+func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
+	res := make(map[string]func() ([]byte, error))
+	if len(pathToFile) > 0 {
+		res[pathToFile] = rawSpec
+	}
+
+	return res
+}
+
+// GetSwagger returns the Swagger specification corresponding to the generated code
+// in this file. The external references of Swagger specification are resolved.
+// The logic of resolving external references is tightly connected to "import-mapping" feature.
+// Externally referenced files must be embedded in the corresponding golang packages.
+// Urls can be supported but this task was out of the scope.
+func GetSwagger() (swagger *openapi3.T, err error) {
+	resolvePath := PathToRawSpec("")
+
+	loader := openapi3.NewLoader()
+	loader.IsExternalRefsAllowed = true
+	loader.ReadFromURIFunc = func(loader *openapi3.Loader, url *url.URL) ([]byte, error) {
+		pathToFile := url.String()
+		pathToFile = path.Clean(pathToFile)
+		getSpec, ok := resolvePath[pathToFile]
+		if !ok {
+			err1 := fmt.Errorf("path not found: %s", pathToFile)
+			return nil, err1
+		}
+		return getSpec()
+	}
+	var specData []byte
+	specData, err = rawSpec()
+	if err != nil {
+		return
+	}
+	swagger, err = loader.LoadFromData(specData)
+	if err != nil {
+		return
+	}
+	return
 }
